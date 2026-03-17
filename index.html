@@ -121,6 +121,26 @@
             padding: 0.75rem 1.5rem; border-radius: var(--radius); cursor: pointer; flex: 1; font-weight: 600;
         }
 
+        /* Área de Filtros */
+        .filters-area {
+            background-color: var(--container-bg);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .filters-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .suggestion-item {
             background-color: var(--container-bg);
             border-radius: var(--radius);
@@ -219,7 +239,7 @@
                 </div>
                 <div class="form-group">
                     <label>Responsável / Autor</label>
-                    <input type="text" id="author" placeholder="Ex: Gisela">
+                    <input type="text" id="author" placeholder="Ex: Raniere">
                 </div>
             </div>
 
@@ -248,6 +268,28 @@
             </div>
             <div id="loading">Sincronizando...</div>
         </form>
+    </div>
+
+    <div class="filters-area">
+        <div class="filters-title"><span>🔍</span> Filtros e Pesquisa</div>
+        <div class="form-grid">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Filtrar por Categoria</label>
+                <select id="filterCategory" onchange="renderList()">
+                    <option value="">Todas as categorias</option>
+                    <option value="Plataforma (Geral)">Plataforma (Geral)</option>
+                    <option value="Minha Visão">Minha Visão</option>
+                    <option value="Tracker Gestor">Tracker Gestor</option>
+                    <option value="Planejamento (Geral)">Planejamento (Geral)</option>
+                    <option value="Tarefas">Tarefas</option>
+                    <option value="Gantt">Gantt</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label>Filtrar por Autor</label>
+                <input type="text" id="filterAuthor" placeholder="Digite o nome do autor..." oninput="renderList()">
+            </div>
+        </div>
     </div>
 
     <h3 style="margin-bottom: 1rem; color: var(--text-secondary);">Registros Atuais</h3>
@@ -298,7 +340,7 @@
             const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': API_KEY } });
             const data = await res.json();
             currentData = data.record || [];
-            renderList(currentData);
+            renderList();
         } catch (e) { console.error(e); }
     }
 
@@ -311,32 +353,44 @@
                 body: JSON.stringify(newData)
             });
             currentData = newData;
-            renderList(currentData);
+            renderList();
             resetForm();
         } catch (e) { alert("Erro ao sincronizar."); }
         finally { document.getElementById('loading').style.display = 'none'; }
     }
 
-    function renderList(list) {
+    function renderList() {
         const container = document.getElementById('suggestionsList');
-        container.innerHTML = list.length === 0 ? '<div class="empty-state">Nenhum registro encontrado.</div>' : '';
-
-        // Preservamos o acesso ao array original via mapeamento de IDs ou índices antes de ordenar
-        const indexedList = list.map((item, idx) => ({ ...item, originalIndex: idx }));
         
+        // Obter valores dos filtros
+        const catFilter = document.getElementById('filterCategory').value.toLowerCase();
+        const authFilter = document.getElementById('filterAuthor').value.toLowerCase();
+
+        // Mapear com índice original ANTES de filtrar para manter compatibilidade com edições/curtidas
+        let processedList = currentData.map((item, idx) => ({ ...item, originalIndex: idx }));
+        
+        // Aplicar filtros
+        processedList = processedList.filter(item => {
+            const matchCat = catFilter === "" || (item.category && item.category.toLowerCase().includes(catFilter));
+            const matchAuth = authFilter === "" || (item.author && item.author.toLowerCase().includes(authFilter));
+            return matchCat && matchAuth;
+        });
+
         // Ordenação por status de conclusão e depois por curtidas (Ranking)
-        indexedList.sort((a, b) => {
+        processedList.sort((a, b) => {
             if (a.completed === b.completed) {
                 return (b.likes || 0) - (a.likes || 0);
             }
             return a.completed ? 1 : -1;
         });
 
-        indexedList.forEach((item) => {
+        container.innerHTML = processedList.length === 0 ? '<div class="empty-state">Nenhum registro encontrado com os filtros atuais.</div>' : '';
+
+        processedList.forEach((item) => {
             const likes = item.likes || 0;
             const likedBy = item.likedBy || [];
             const hasLiked = likedBy.includes(currentUserID);
-            const index = item.originalIndex;
+            const index = item.originalIndex; // Pega o índice real do banco de dados
 
             const div = document.createElement('div');
             div.className = `suggestion-item ${item.completed ? 'completed' : ''}`;
