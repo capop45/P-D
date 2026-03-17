@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugestões de Melhorias P&D</title>
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/603/603188.png" type="image/png">
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.min.js"></script>
+
+    <style>
+        /* ================= VARIÁVEIS & TEMA ================= */
+        :root {
+            --bg-color: #f0f2f5;
+            --container-bg: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-color: #0ea5e9;
+            --accent-hover: #0284c7;
+            --danger-color: #ef4444;
+            --edit-color: #f59e0b;
+            --success-color: #10b981;
+            --success-bg: #ecfdf5;
+            --border-color: #e2e8f0;
+            --input-bg: #f8fafc;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --radius: 8px;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #0f172a;
+            --container-bg: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent-color: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --border-color: #334155;
+            --input-bg: #334155;
+            --success-bg: #064e3b;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; transition: background-color 0.3s, color 0.3s, border-color 0.3s; }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container { max-width: 900px; margin: 0 auto; }
+
+        header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 2rem; 
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        h1 { font-size: 1.8rem; font-weight: 700; color: var(--accent-color); }
+
+        .header-actions { display: flex; gap: 10px; }
+
+        .btn-header {
+            background: var(--container-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 8px; font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .btn-header:hover { background-color: var(--border-color); }
+
+        .btn-excel {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+        }
+        .btn-excel:hover { background-color: #059669; }
+
+        .card {
+            background-color: var(--container-bg);
+            padding: 2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: var(--text-secondary); font-size: 0.9rem; }
+        
+        input, select, textarea {
+            width: 100%; padding: 0.75rem; border-radius: var(--radius);
+            border: 1px solid var(--border-color); background-color: var(--input-bg);
+            color: var(--text-primary); font-size: 0.95rem;
+        }
+
+        .hidden { display: none; }
+
+        .button-group { display: flex; gap: 10px; margin-top: 1rem; }
+
+        button.btn-submit {
+            background-color: var(--accent-color); color: white; border: none;
+            padding: 0.75rem 1.5rem; border-radius: var(--radius);
+            font-size: 1rem; font-weight: 600; cursor: pointer; flex: 2;
+        }
+        button.btn-submit:hover { background-color: var(--accent-hover); }
+
+        button.btn-cancel {
+            background-color: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color);
+            padding: 0.75rem 1.5rem; border-radius: var(--radius); cursor: pointer; flex: 1; font-weight: 600;
+        }
+
+        .suggestion-item {
+            background-color: var(--container-bg);
+            border-radius: var(--radius);
+            margin-bottom: 0.8rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .suggestion-item.completed {
+            border-color: var(--success-color);
+            background-color: var(--success-bg);
+        }
+
+        .item-summary {
+            padding: 1rem 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr auto; 
+            gap: 1rem;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .summary-main { display: flex; flex-direction: column; gap: 4px; }
+        .item-title { font-weight: 700; font-size: 1.1rem; color: var(--text-primary); }
+        .item-meta { font-size: 0.85rem; color: var(--text-secondary); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        
+        .badge {
+            background-color: var(--accent-color); color: white;
+            padding: 0.15rem 0.5rem; border-radius: 4px;
+            font-size: 0.75rem; font-weight: bold; text-transform: uppercase;
+        }
+
+        .item-actions { display: flex; gap: 8px; align-items: center; }
+        
+        .action-btn {
+            background: none; border: 1px solid transparent; cursor: pointer; padding: 6px 10px;
+            border-radius: 4px; color: var(--text-secondary);
+            display: flex; align-items: center; gap: 5px; font-size: 0.8rem; font-weight: 600;
+        }
+        .action-btn:hover { background-color: rgba(0,0,0,0.05); }
+
+        .btn-complete { border-color: var(--border-color); }
+        .completed .btn-complete { color: var(--success-color); border-color: var(--success-color); }
+
+        .btn-like { border: 1px solid var(--border-color); }
+        .btn-like.curtido { color: var(--accent-color); border-color: var(--accent-color); background-color: rgba(14, 165, 233, 0.1); }
+
+        .item-details {
+            display: none; 
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            background-color: rgba(0,0,0,0.02);
+            color: var(--text-secondary);
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .item-details.open { display: block; animation: fadeIn 0.3s; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        #loading { display: none; text-align: center; margin-top: 10px; color: var(--accent-color); font-weight: bold; }
+        .empty-state { text-align: center; color: var(--text-secondary); padding: 3rem; font-style: italic; }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="logo-area">
+            <h1>🚀 Mural de Sugestões P&D</h1>
+        </div>
+        
+        <div class="header-actions">
+            <button class="btn-header" onclick="window.open('https://drive.google.com/drive/folders/1-vhrZ85RUNx6Qxb6LkvzwwRahCx9-r_w?usp=drive_link', '_blank')">
+                <span>📚</span> Documentação
+            </button>
+            <button class="btn-header btn-excel" onclick="exportToExcel()">
+                <span>📊</span> Exportar Excel
+            </button>
+            <button class="btn-header theme-toggle" onclick="toggleTheme()">
+                <span id="theme-icon">🌙</span> <span id="theme-text">Escuro</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="card">
+        <h2 style="margin-bottom: 1rem;" id="formTitle">Nova Sugestão P&D</h2>
+        <form id="suggestionForm">
+            <input type="hidden" id="editIndex" value="-1">
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Título da Melhoria</label>
+                    <input type="text" id="title" required placeholder="Ex: Ferramenta de zoom no Gantt">
+                </div>
+                <div class="form-group">
+                    <label>Responsável / Autor</label>
+                    <input type="text" id="author" placeholder="Ex: Gisela">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Módulo / Categoria</label>
+                <select id="category" onchange="toggleCustomCategory()">
+                    <option value="Plataforma (Geral)">Plataforma (Geral)</option>
+                    <option value="Minha Visão">Minha Visão</option>
+                    <option value="Tracker Gestor">Tracker Gestor</option>
+                    <option value="Planejamento (Geral)">Planejamento (Geral)</option>
+                    <option value="Tarefas">Tarefas</option>
+                    <option value="Gantt">Gantt</option>
+                    <option value="Outro">Outro (Especificar...)</option>
+                </select>
+                <input type="text" id="customCategory" class="hidden" placeholder="Digite a categoria personalizada..." style="margin-top: 10px;">
+            </div>
+
+            <div class="form-group">
+                <label>Descrição Detalhada</label>
+                <textarea id="description" rows="4" required placeholder="Descreva os detalhes da melhoria ou ajuste necessário..."></textarea>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" class="btn-submit" id="submitBtn">Salvar Registro</button>
+                <button type="button" class="btn-cancel hidden" id="cancelBtn" onclick="resetForm()">Cancelar</button>
+            </div>
+            <div id="loading">Sincronizando...</div>
+        </form>
+    </div>
+
+    <h3 style="margin-bottom: 1rem; color: var(--text-secondary);">Registros Atuais</h3>
+    <div id="suggestionsList" class="suggestion-list"></div>
+</div>
+
+<script>
+    // ID do Bin atualizado para o novo repositório de P&D
+    const BIN_ID = '69b9ada4c3097a1dd533f8c9'; 
+    const API_KEY = '$2a$10$T3C70qhYrKZMczxOir2xUeypvmxIZ89FRuioGyxBSh/gZorc4iBAy'; 
+
+    let currentData = [];
+
+    function getOrCreateUserID() {
+        let id = localStorage.getItem('bim_userID');
+        if (!id) {
+            id = (typeof crypto.randomUUID === 'function') 
+                ? crypto.randomUUID() 
+                : 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('bim_userID', id);
+        }
+        return id;
+    }
+
+    const currentUserID = getOrCreateUserID();
+
+    function exportToExcel() {
+        if (typeof XLSX === 'undefined' || currentData.length === 0) return alert("Erro no carregamento ou lista vazia.");
+        const sortedForExcel = [...currentData].sort((a, b) => (b.likes || 0) - (a.likes || 0));
+        const dataForExcel = sortedForExcel.map(item => [item.title, item.category, item.author, new Date(item.date).toLocaleString('pt-BR'), item.completed ? "Sim" : "Não", item.likes || 0, item.description]);
+        const header = ["Título", "Módulo", "Responsável", "Data", "Concluído", "Curtidas", "Descrição"];
+        dataForExcel.unshift(header);
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(dataForExcel);
+        XLSX.utils.book_append_sheet(wb, ws, "Sugestões P&D");
+        XLSX.writeFile(wb, "Relatorio_Melhorias_PD.xlsx");
+    }
+
+    function toggleCustomCategory() {
+        const select = document.getElementById('category');
+        const input = document.getElementById('customCategory');
+        if (select.value === 'Outro') { input.classList.remove('hidden'); input.required = true; } 
+        else { input.classList.add('hidden'); input.required = false; }
+    }
+
+    async function fetchSuggestions() {
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, { headers: { 'X-Master-Key': API_KEY } });
+            const data = await res.json();
+            currentData = data.record || [];
+            renderList(currentData);
+        } catch (e) { console.error(e); }
+    }
+
+    async function pushToBin(newData) {
+        document.getElementById('loading').style.display = 'block';
+        try {
+            await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': API_KEY },
+                body: JSON.stringify(newData)
+            });
+            currentData = newData;
+            renderList(currentData);
+            resetForm();
+        } catch (e) { alert("Erro ao sincronizar."); }
+        finally { document.getElementById('loading').style.display = 'none'; }
+    }
+
+    function renderList(list) {
+        const container = document.getElementById('suggestionsList');
+        container.innerHTML = list.length === 0 ? '<div class="empty-state">Nenhum registro encontrado.</div>' : '';
+
+        // Preservamos o acesso ao array original via mapeamento de IDs ou índices antes de ordenar
+        const indexedList = list.map((item, idx) => ({ ...item, originalIndex: idx }));
+        
+        // Ordenação por status de conclusão e depois por curtidas (Ranking)
+        indexedList.sort((a, b) => {
+            if (a.completed === b.completed) {
+                return (b.likes || 0) - (a.likes || 0);
+            }
+            return a.completed ? 1 : -1;
+        });
+
+        indexedList.forEach((item) => {
+            const likes = item.likes || 0;
+            const likedBy = item.likedBy || [];
+            const hasLiked = likedBy.includes(currentUserID);
+            const index = item.originalIndex;
+
+            const div = document.createElement('div');
+            div.className = `suggestion-item ${item.completed ? 'completed' : ''}`;
+            
+            div.innerHTML = `
+                <div class="item-summary" onclick="toggleDetails(this)">
+                    <div class="summary-main">
+                        <span class="item-title">${escapeHtml(item.title)}</span>
+                        <div class="item-meta">
+                            <span class="badge">${escapeHtml(item.category)}</span>
+                            <span>• ${escapeHtml(item.author || 'Anônimo')}</span>
+                        </div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="action-btn btn-like ${hasLiked ? 'curtido' : ''}" onclick="toggleLike(${index}, event)">
+                            👍 ${likes}
+                        </button>
+                        <button class="action-btn btn-complete" onclick="toggleComplete(${index}, event)">
+                            ${item.completed ? '✅ Concluída' : '⭕ Concluir'}
+                        </button>
+                        <button class="action-btn" title="Editar" onclick="prepareEdit(${index}, event)">✏️</button>
+                        <button class="action-btn" title="Excluir" onclick="deleteItem(${index}, event)">🗑️</button>
+                    </div>
+                </div>
+                <div class="item-details">
+                    <strong>Detalhes da Melhoria:</strong><br>${escapeHtml(item.description)}
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    async function toggleLike(index, event) {
+        event.stopPropagation();
+        const item = currentData[index];
+        item.likes = item.likes || 0;
+        item.likedBy = item.likedBy || [];
+
+        const userIdx = item.likedBy.indexOf(currentUserID);
+        if (userIdx > -1) {
+            item.likedBy.splice(userIdx, 1);
+            item.likes = Math.max(0, item.likes - 1);
+        } else {
+            item.likedBy.push(currentUserID);
+            item.likes++;
+        }
+        await pushToBin(currentData);
+    }
+
+    async function toggleComplete(index, event) {
+        event.stopPropagation();
+        currentData[index].completed = !currentData[index].completed;
+        await pushToBin(currentData);
+    }
+
+    document.getElementById('suggestionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const cat = document.getElementById('category').value;
+        const formData = {
+            title: document.getElementById('title').value,
+            author: document.getElementById('author').value,
+            category: cat === 'Outro' ? document.getElementById('customCategory').value : cat,
+            description: document.getElementById('description').value,
+            date: new Date().toISOString(),
+            completed: false,
+            likes: 0,
+            likedBy: []
+        };
+
+        const idx = parseInt(document.getElementById('editIndex').value);
+        if (idx >= 0) {
+            formData.completed = currentData[idx].completed;
+            formData.likes = currentData[idx].likes || 0;
+            formData.likedBy = currentData[idx].likedBy || [];
+            formData.date = currentData[idx].date || formData.date;
+            currentData[idx] = formData;
+        } else {
+            currentData.unshift(formData);
+        }
+        await pushToBin(currentData);
+    });
+
+    function prepareEdit(index, event) {
+        event.stopPropagation();
+        const item = currentData[index];
+        document.getElementById('title').value = item.title;
+        document.getElementById('author').value = item.author;
+        document.getElementById('description').value = item.description;
+        document.getElementById('category').value = item.category;
+        document.getElementById('editIndex').value = index;
+        document.getElementById('submitBtn').textContent = 'Atualizar Registro';
+        document.getElementById('formTitle').textContent = 'Editando Sugestão';
+        document.getElementById('cancelBtn').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+        document.getElementById('suggestionForm').reset();
+        document.getElementById('editIndex').value = "-1";
+        document.getElementById('submitBtn').textContent = 'Salvar Registro';
+        document.getElementById('formTitle').textContent = 'Nova Sugestão P&D';
+        document.getElementById('cancelBtn').classList.add('hidden');
+        toggleCustomCategory();
+    }
+
+    async function deleteItem(index, event) {
+        event.stopPropagation();
+        if(!confirm('Excluir esta sugestão?')) return;
+        currentData.splice(index, 1);
+        await pushToBin(currentData);
+    }
+
+    function toggleDetails(el) { el.nextElementSibling.classList.toggle('open'); }
+    function escapeHtml(t) { return t ? t.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])) : ''; }
+    
+    function toggleTheme() {
+        const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', next);
+        const icon = document.getElementById('theme-icon');
+        icon.textContent = next === 'dark' ? '☀️' : '🌙';
+    }
+
+    fetchSuggestions();
+</script>
+</body>
+</html>
